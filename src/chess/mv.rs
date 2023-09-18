@@ -1,32 +1,42 @@
-use crate::{Board, Piece};
+use crate::PieceType;
 
-pub struct Move {
-    pub piece: Piece,
-    pub is_check: bool,
-    pub is_checkmate: bool,
-    pub capture: Option<(usize, usize)>,
-    pub tiles_traversed: Vec<(usize, usize)>,
-    pub board_before_move: Board,
-    pub board_after_move: Board,
+pub enum CastleSide {
+    KingSide,
+    QueenSide,
 }
 
-impl Move {
-    fn from(&self) -> (usize, usize) {
-        if self.tiles_traversed.len() == 0 {
-            panic!("No tiles traversed");
-        }
-
-        self.tiles_traversed[0]
-    }
-
-    fn to(&self) -> (usize, usize) {
-        if self.tiles_traversed.len() == 0 {
-            panic!("No tiles traversed");
-        }
-
-        *self
-            .tiles_traversed
-            .last()
-            .expect("The check above should prevent this")
-    }
+/// A move that can be made on a board
+pub enum Move {
+    /// A move that is not a capture
+    Quiet {
+        from: (usize, usize),
+        to: (usize, usize),
+    },
+    /// A move that is a capture
+    Capture {
+        from: (usize, usize),
+        to: (usize, usize),
+        capture: (usize, usize),
+    },
+    /// A move that is a castle
+    Castle {
+        from: (usize, usize),
+        to: (usize, usize),
+        rook_from: (usize, usize),
+        rook_to: (usize, usize),
+        side: CastleSide,
+    },
+    /// A move that is a promotion
+    QuietPromotion {
+        from: (usize, usize),
+        to: (usize, usize),
+        promotion: PieceType,
+    },
+    /// A move that is a capture and a promotion
+    CapturePromotion {
+        from: (usize, usize),
+        to: (usize, usize),
+        capture: (usize, usize),
+        promotion: PieceType,
+    },
 }
