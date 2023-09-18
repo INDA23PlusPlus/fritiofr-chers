@@ -1,7 +1,8 @@
 use std::error::Error;
 
-use crate::Piece;
+use crate::{Move, Piece};
 
+#[derive(Copy, Clone)]
 pub struct Board {
     tiles: [Option<Piece>; 64],
 }
@@ -83,6 +84,26 @@ impl Board {
 
         self.tiles[index] = Some(piece);
     }
+
+    pub fn apply_mv(&mut self, mv: Move) -> Result<(), BoardApplyMoveError> {
+        if mv.board_before_move != *self {
+            return Err(BoardApplyMoveError::InvalidMove);
+        }
+
+        self.tiles = mv.board_after_move.tiles;
+
+        Ok(())
+    }
+}
+
+impl Eq for Board {}
+impl PartialEq for Board {
+    fn eq(&self, other: &Self) -> bool {
+        self.tiles
+            .into_iter()
+            .zip(other.tiles.into_iter())
+            .all(|(a, b)| a == b)
+    }
 }
 
 impl std::fmt::Display for Board {
@@ -115,4 +136,10 @@ pub enum BoardFromFenError {
     UnknownCharacter,
     #[error("FEN string has too many tiles")]
     TooManyTiles,
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum BoardApplyMoveError {
+    #[error("The move is not valid for this board")]
+    InvalidMove,
 }

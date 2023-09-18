@@ -4,13 +4,13 @@
 
 use std::str::FromStr;
 
-#[derive(Copy, Clone)]
+#[derive(PartialEq, Eq, Copy, Clone)]
 pub struct Piece {
     pub piece_type: PieceType,
     pub color: Color,
 }
 
-#[derive(Copy, Clone)]
+#[derive(PartialEq, Eq, Copy, Clone)]
 pub enum PieceType {
     Pawn,
     Knight,
