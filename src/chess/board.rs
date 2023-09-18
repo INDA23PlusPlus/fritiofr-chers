@@ -1,15 +1,28 @@
 use std::error::Error;
 
-use crate::{Move, Piece};
+use crate::{Color, Move, Piece, PieceType};
 
 #[derive(Copy, Clone)]
 pub struct Board {
     tiles: [Option<Piece>; 64],
+    /// Stores a pawn that can be captured en passant
+    en_passant: Option<(usize, usize)>,
+    white_kingside_castle: bool,
+    white_queenside_castle: bool,
+    black_kingside_castle: bool,
+    black_queenside_castle: bool,
 }
 
 impl Board {
     pub fn new() -> Board {
-        Board { tiles: [None; 64] }
+        Board {
+            tiles: [None; 64],
+            en_passant: None,
+            white_kingside_castle: false,
+            white_queenside_castle: false,
+            black_kingside_castle: false,
+            black_queenside_castle: false,
+        }
     }
 
     /// Creates a new board from a fen string
@@ -85,14 +98,154 @@ impl Board {
         self.tiles[index] = Some(piece);
     }
 
-    pub fn apply_mv(&mut self, mv: Move) -> Result<(), BoardApplyMoveError> {
-        if mv.board_before_move != *self {
-            return Err(BoardApplyMoveError::InvalidMove);
+    pub fn remove_piece(&mut self, x: usize, y: usize) {
+        if x > 7 || y > 7 {
+            panic!("x and y must be between 0 and 7");
         }
 
-        self.tiles = mv.board_after_move.tiles;
+        let index = y * 8 + x;
+
+        self.tiles[index] = None;
+    }
+
+    pub fn apply_move(&mut self, mv: Move) -> Result<(), Box<dyn Error>> {
+        match mv {
+            Move::Quiet { from, to } => {
+                if let Some(piece) = self.get_piece(from.0, from.1) {
+                    self.remove_piece(from.0, from.1);
+                    self.set_piece(to.0, to.1, piece);
+                } else {
+                    return Err(Box::new(BoardApplyMoveError::InvalidMove));
+                }
+            }
+            Move::Capture { from, to, capture } => {
+                if let Some(piece) = self.get_piece(from.0, from.1) {
+                    self.remove_piece(capture.0, capture.1);
+                    self.remove_piece(from.0, from.1);
+                    self.set_piece(to.0, to.1, piece);
+                } else {
+                    return Err(Box::new(BoardApplyMoveError::InvalidMove));
+                }
+            }
+            Move::Castle {
+                from,
+                to,
+                rook_from,
+                rook_to,
+                side,
+            } => todo!(),
+            Move::QuietPromotion {
+                from,
+                to,
+                promotion,
+            } => todo!(),
+            Move::CapturePromotion {
+                from,
+                to,
+                capture,
+                promotion,
+            } => todo!(),
+            _ => todo!(),
+        };
 
         Ok(())
+    }
+
+    fn gen_tile_moves_ign_check(
+        &self,
+        x: usize,
+        y: usize,
+    ) -> Result<Option<Vec<Move>>, Box<dyn Error>> {
+        let piece = self.get_piece(x, y);
+
+        if piece.is_none() {
+            return Ok(None);
+        }
+
+        let piece = piece.expect("Already checked that this is not none");
+
+        let moves = match piece.piece_type {
+            PieceType::Pawn => {
+                todo!()
+            }
+            PieceType::Rook | PieceType::Bishop | PieceType::Queen | PieceType::Knight => {
+                // The idea is to loop around and spread out to find all the moves
+                let mut moves = Vec::new();
+
+                let (dirs, depth) = match piece.piece_type {
+                    PieceType::Rook => (vec![(-1, 0), (1, 0), (0, -1), (0, 1)], 8),
+                    PieceType::Bishop => (vec![(-1, -1), (-1, 1), (1, -1), (1, 1)], 8),
+                    PieceType::Queen => (
+                        vec![
+                            (-1, 0),
+                            (1, 0),
+                            (0, -1),
+                            (0, 1),
+                            (-1, -1),
+                            (-1, 1),
+                            (1, -1),
+                            (1, 1),
+                        ],
+                        8,
+                    ),
+                    PieceType::Knight => (
+                        vec![
+                            (-2, -1),
+                            (-2, 1),
+                            (-1, -2),
+                            (-1, 2),
+                            (1, -2),
+                            (1, 2),
+                            (2, -1),
+                            (2, 1),
+                        ],
+                        1,
+                    ),
+                    _ => unreachable!(),
+                };
+
+                for dir in dirs {
+                    for i in 0..depth {
+                        let c_x = dir.0 * i + x as i32;
+                        let c_y = dir.1 * i + y as i32;
+
+                        if c_x < 0 || c_x > 7 || c_y < 0 || c_y > 7 {
+                            break;
+                        }
+
+                        let c_x = c_x as usize;
+                        let c_y = c_y as usize;
+
+                        let oc_piece = self.get_piece(c_x, c_y);
+
+                        match oc_piece {
+                            Some(oc_piece) => {
+                                if oc_piece.color != piece.color {
+                                    moves.push(Move::Capture {
+                                        from: (x, y),
+                                        to: (c_x, c_y),
+                                        capture: (c_x, c_y),
+                                    });
+                                }
+
+                                break;
+                            }
+                            None => {
+                                moves.push(Move::Quiet {
+                                    from: (x, y),
+                                    to: (c_x, c_y),
+                                });
+                            }
+                        }
+                    }
+                }
+
+                moves
+            }
+            _ => todo!(),
+        };
+
+        Ok(Some(moves))
     }
 }
 
