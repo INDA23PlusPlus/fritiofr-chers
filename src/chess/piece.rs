@@ -4,13 +4,13 @@
 
 use std::str::FromStr;
 
-#[derive(PartialEq, Eq, Copy, Clone)]
+#[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub struct Piece {
     pub piece_type: PieceType,
     pub color: Color,
 }
 
-#[derive(PartialEq, Eq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum PieceType {
     Pawn,
     Knight,
@@ -20,10 +20,19 @@ pub enum PieceType {
     King,
 }
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Debug, Clone, PartialEq, Eq)]
 pub enum Color {
     White,
     Black,
+}
+
+impl Color {
+    pub fn opposite(&self) -> Color {
+        match self {
+            Color::White => Color::Black,
+            Color::Black => Color::White,
+        }
+    }
 }
 
 impl Into<char> for Piece {
