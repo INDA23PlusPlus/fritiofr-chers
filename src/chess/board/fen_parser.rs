@@ -31,10 +31,8 @@ pub fn fen_parser(fen: &str) -> Result<Board, Box<dyn Error>> {
     let fen_part_turn = fen_parts[1];
     let fen_part_castling = fen_parts[2];
     let fen_part_en_passant = fen_parts[3];
-    let fen_part_halfmove = fen_parts[4];
-    let fen_part_fullmove = fen_parts[5];
 
-    if fen_parts.len() != 6 {
+    if fen_parts.len() != 4 {
         return Err(Box::new(BoardFromFenError::IncorrectAmountOfParts));
     }
 
@@ -49,9 +47,6 @@ pub fn fen_parser(fen: &str) -> Result<Board, Box<dyn Error>> {
     let castling = castling_part(fen_part_castling)?;
 
     let en_passant = en_passant(fen_part_en_passant)?;
-
-    let halfmove = fen_part_halfmove.parse::<usize>()?;
-    let fullmove = fen_part_fullmove.parse::<usize>()?;
 
     if let Some((ep_x, ep_y)) = en_passant {
         // Because i store en passant as the tile of the pawn that can be captured,
@@ -75,8 +70,6 @@ pub fn fen_parser(fen: &str) -> Result<Board, Box<dyn Error>> {
     Ok(Board {
         tiles,
         turn,
-        halfmove,
-        fullmove,
         en_passant,
         white_kingside_castle: castling[0],
         white_queenside_castle: castling[1],

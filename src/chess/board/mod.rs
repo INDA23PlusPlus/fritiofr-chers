@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use crate::{chess::board::mv::CastleSide, Color, Piece, PieceType};
+use crate::{Color, Piece, PieceType};
 
 mod fen_parser;
 
@@ -13,8 +13,6 @@ pub use mv::Move;
 pub struct Board {
     tiles: [Option<Piece>; 64],
     pub turn: Color,
-    halfmove: usize,
-    fullmove: usize,
     /// Stores a pawn that can be captured en passant
     en_passant: Option<(usize, usize)>,
 
@@ -30,8 +28,6 @@ impl Board {
             tiles: [None; 64],
             en_passant: None,
             turn: Color::White,
-            halfmove: 0,
-            fullmove: 1,
 
             white_kingside_castle: false,
             white_queenside_castle: false,
@@ -52,7 +48,7 @@ impl Board {
     /// # Examples
     /// ```
     /// // Starting position
-    /// let board = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    /// let board = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
     /// ```
     pub fn from_fen(fen: &str) -> Result<Board, Box<dyn Error>> {
         fen_parser::fen_parser(fen)
@@ -60,7 +56,7 @@ impl Board {
 
     /// Returns a board with the starting position
     pub fn start_pos() -> Board {
-        Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+        Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -")
             .expect("This fen string is valid")
     }
 
@@ -141,10 +137,6 @@ impl Board {
                         self.en_passant = Some((to.0, to.1));
                     }
 
-                    if piece.piece_type == PieceType::Pawn {
-                        self.halfmove = 0;
-                    }
-
                     if piece.piece_type == PieceType::King {
                         if piece.color == Color::White {
                             self.white_kingside_castle = false;
@@ -223,8 +215,6 @@ impl Board {
                         }
                     }
 
-                    self.halfmove = 0;
-
                     self.remove_tile(capture.0, capture.1);
                     self.remove_tile(from.0, from.1);
                     self.set_tile(to.0, to.1, piece);
@@ -270,8 +260,6 @@ impl Board {
                 ..
             } => {
                 if let Some(piece) = self.get_tile(from.0, from.1) {
-                    self.halfmove = 0;
-
                     self.remove_tile(from.0, from.1);
                     self.set_tile(
                         to.0,
@@ -308,8 +296,6 @@ impl Board {
                             }
                         }
                     }
-
-                    self.halfmove = 0;
 
                     self.remove_tile(from.0, from.1);
                     self.remove_tile(capture.0, capture.1);
