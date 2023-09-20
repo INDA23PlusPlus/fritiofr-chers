@@ -6,6 +6,8 @@ mod fen_parser;
 
 pub use fen_parser::BoardFromFenError;
 
+mod gen_pseudo_legal_moves;
+
 mod mv;
 pub use mv::Move;
 
@@ -331,8 +333,7 @@ impl Board {
                 ((x, y), p.unwrap())
             })
             .filter(|(_, p)| p.color == color)
-            .map(|((x, y), _)| self.gen_pseudo_legal_moves(x, y))
-            .flatten()
+            .map(|((x, y), _)| self.gen_pseudo_legal_moves(x, y).unwrap_or(Vec::new()))
             .flatten()
             .any(|m| match m {
                 Move::Capture { capture, .. } | Move::CapturePromotion { capture, .. } => {
@@ -358,6 +359,15 @@ impl Board {
     /// checkmate, this will return true
     pub fn is_checkmate(&self) -> bool {
         self.is_check() && self.gen_all_moves().is_none()
+    }
+
+    /// Returns if the current turn is in stalemate
+    ///
+    /// # Returns
+    /// * `bool` - If the current turn is in stalemate, if it's black to move and black is in
+    /// stalemate, this will return true
+    pub fn is_stalemate(&self) -> bool {
+        !self.is_check() && self.gen_all_moves().is_none()
     }
 
     /// Returns all moves for the current turn
@@ -418,7 +428,8 @@ impl Board {
                     .apply_move(*m)
                     .expect("gen_pseudo_legal_moves only returns valid moves");
 
-                !board.can_capture_king(board.turn)
+                let can_cap = !board.can_capture_king(board.turn);
+                can_cap
             })
             .collect::<Vec<Move>>();
 
@@ -429,371 +440,8 @@ impl Board {
         Some(moves)
     }
 
-    /// Checks if a tile is attacked by a certain color
-    ///
-    /// # Arguments
-    /// * `x` - The x coordinate of the tile
-    /// * `y` - The y coordinate of the tile
-    /// * `color` - The color of the attacking pieces
-    ///
-    /// # Returns
-    /// * `bool` - If theres a piece that can immediately capture the tile
-    fn tile_under_attack(&self, x: usize, y: usize, color: Color) -> bool {
-        // The idea here is to create a dummy board and on the tile we want to check add a piece
-        // Then we run move generation and check if any of the moves are a capture of the tile
-        // If so then the tile is under attack
-        let mut dummy_board = self.clone();
-
-        if let Some(piece) = dummy_board.get_tile(x, y) {
-            if piece.color == color {
-                return false;
-            }
-        } else {
-            dummy_board.set_tile(
-                x,
-                y,
-                Piece {
-                    piece_type: PieceType::Pawn,
-                    color: color.opposite(),
-                },
-            );
-        }
-
-        dummy_board
-            .tiles
-            .iter()
-            .enumerate()
-            .filter(|(_, p)| p.is_some())
-            .map(|(i, p)| {
-                let x = i % 8;
-                let y = i / 8;
-
-                ((x, y), p.unwrap())
-            })
-            .filter(|(_, p)| p.color == color)
-            .map(|((x, y), _)| dummy_board.gen_pseudo_legal_moves(x, y))
-            .flatten()
-            .flatten()
-            .any(|m| match m {
-                Move::Capture { capture, .. } | Move::CapturePromotion { capture, .. } => {
-                    capture == (x, y)
-                }
-                _ => false,
-            })
-    }
-
     fn gen_pseudo_legal_moves(&self, x: usize, y: usize) -> Option<Vec<Move>> {
-        let piece = self.get_tile(x, y);
-
-        if piece.is_none() {
-            return None;
-        }
-
-        let piece = piece.expect("Already checked that this is not none");
-
-        let mut moves = match piece.piece_type {
-            PieceType::Pawn => {
-                let mut moves = Vec::new();
-
-                let final_rank = if piece.color == Color::White { 0 } else { 7 };
-                let dir = if piece.color == Color::White { -1 } else { 1 };
-                let starting_rank = if piece.color == Color::White { 6 } else { 1 };
-                let promotion_pieces = [
-                    PieceType::Queen,
-                    PieceType::Rook,
-                    PieceType::Bishop,
-                    PieceType::Knight,
-                ];
-
-                // Regular move forwards
-                {
-                    let c_x = x as i32;
-                    let c_y = y as i32 + dir;
-
-                    if c_y >= 0 && c_y <= 7 {
-                        let c_x = c_x as usize;
-                        let c_y = c_y as usize;
-
-                        let oc_piece = self.get_tile(c_x as usize, c_y as usize);
-
-                        if oc_piece.is_none() {
-                            if c_y == final_rank {
-                                moves.append(
-                                    &mut promotion_pieces
-                                        .iter()
-                                        .map(|&p| Move::QuietPromotion {
-                                            from: (x, y),
-                                            to: (c_x, c_y),
-                                            promotion: p,
-                                        })
-                                        .collect(),
-                                );
-                            } else {
-                                moves.push(Move::Quiet {
-                                    from: (x, y),
-                                    to: (c_x, c_y),
-                                });
-                            }
-                        }
-                    }
-                }
-
-                // Double forwards
-                {
-                    let c_x = x as i32;
-                    let c_y = y as i32 + dir * 2;
-
-                    if (c_y >= 0 && c_y <= 7) && y == starting_rank {
-                        let c_x = c_x as usize;
-                        let c_y = c_y as usize;
-
-                        let oc_piece_further = self.get_tile(c_x as usize, c_y);
-                        let oc_piece_close =
-                            self.get_tile(c_x as usize, (c_y as i32 - dir) as usize);
-
-                        if oc_piece_further.is_none() && oc_piece_close.is_none() {
-                            moves.push(Move::Quiet {
-                                from: (x, y),
-                                to: (c_x, c_y),
-                            });
-                        }
-                    }
-                }
-
-                // Capture
-                {
-                    for x_dir in [-1, 1] {
-                        let c_x = x as i32 + x_dir;
-                        let c_y = y as i32 + dir;
-
-                        if c_y >= 0 && c_y <= 7 && c_x >= 0 && c_x <= 7 {
-                            let c_x = c_x as usize;
-                            let c_y = c_y as usize;
-
-                            let oc_piece = self.get_tile(c_x as usize, c_y as usize);
-
-                            if oc_piece.is_some() && oc_piece.unwrap().color != piece.color {
-                                if c_y == final_rank {
-                                    moves.append(
-                                        &mut promotion_pieces
-                                            .iter()
-                                            .map(|&p| Move::CapturePromotion {
-                                                from: (x, y),
-                                                to: (c_x, c_y),
-                                                capture: (c_x, c_y),
-                                                promotion: p,
-                                            })
-                                            .collect(),
-                                    );
-                                } else {
-                                    moves.push(Move::Capture {
-                                        from: (x, y),
-                                        to: (c_x, c_y),
-                                        capture: (c_x, c_y),
-                                    });
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // En passant
-                {
-                    if let Some((ep_x, ep_y)) = self.en_passant {
-                        for x_dir in [-1, 1] {
-                            let c_x = x as i32 + x_dir;
-                            let c_y = y as i32 + dir;
-
-                            if c_y >= 0 && c_y <= 7 && c_x >= 0 && c_x <= 7 {
-                                let c_x = c_x as usize;
-                                let c_y = c_y as usize;
-
-                                if (c_x, y) == (ep_x, ep_y) {
-                                    moves.push(Move::Capture {
-                                        from: (x, y),
-                                        to: (c_x, c_y),
-                                        capture: (ep_x, ep_y),
-                                    });
-                                }
-                            }
-                        }
-                    }
-                }
-
-                moves
-            }
-            PieceType::Rook
-            | PieceType::Bishop
-            | PieceType::Queen
-            | PieceType::Knight
-            | PieceType::King => {
-                // The idea is to loop around and spread out to find all the moves
-                let mut moves = Vec::new();
-
-                let (dirs, depth) = match piece.piece_type {
-                    PieceType::Rook => (vec![(-1, 0), (1, 0), (0, -1), (0, 1)], 8),
-                    PieceType::Bishop => (vec![(-1, -1), (-1, 1), (1, -1), (1, 1)], 8),
-                    PieceType::Queen => (
-                        vec![
-                            (-1, 0),
-                            (1, 0),
-                            (0, -1),
-                            (0, 1),
-                            (-1, -1),
-                            (-1, 1),
-                            (1, -1),
-                            (1, 1),
-                        ],
-                        8,
-                    ),
-                    PieceType::Knight => (
-                        vec![
-                            (-2, -1),
-                            (-2, 1),
-                            (-1, -2),
-                            (-1, 2),
-                            (1, -2),
-                            (1, 2),
-                            (2, -1),
-                            (2, 1),
-                        ],
-                        1,
-                    ),
-                    PieceType::King => (
-                        vec![
-                            (-1, 0),
-                            (1, 0),
-                            (0, -1),
-                            (0, 1),
-                            (-1, -1),
-                            (-1, 1),
-                            (1, -1),
-                            (1, 1),
-                        ],
-                        1,
-                    ),
-                    _ => unreachable!(),
-                };
-
-                for dir in dirs {
-                    for i in 1..=depth {
-                        let c_x = dir.0 * i + x as i32;
-                        let c_y = dir.1 * i + y as i32;
-
-                        if c_x < 0 || c_x > 7 || c_y < 0 || c_y > 7 {
-                            break;
-                        }
-
-                        let c_x = c_x as usize;
-                        let c_y = c_y as usize;
-
-                        let oc_piece = self.get_tile(c_x, c_y);
-
-                        match oc_piece {
-                            Some(oc_piece) => {
-                                if oc_piece.color != piece.color {
-                                    moves.push(Move::Capture {
-                                        from: (x, y),
-                                        to: (c_x, c_y),
-                                        capture: (c_x, c_y),
-                                    });
-                                }
-
-                                break;
-                            }
-                            None => {
-                                moves.push(Move::Quiet {
-                                    from: (x, y),
-                                    to: (c_x, c_y),
-                                });
-                            }
-                        }
-                    }
-                }
-
-                moves
-            }
-        };
-
-        if piece.piece_type == PieceType::King {
-            if piece.color == Color::White {
-                const WHITE_QUEEN_SIDE_TILES: [(usize, usize); 3] = [(4, 7), (3, 7), (2, 7)];
-                const WHITE_KING_SIDE_TILES: [(usize, usize); 3] = [(4, 7), (5, 7), (6, 7)];
-                if self.white_queenside_castle
-                    && WHITE_QUEEN_SIDE_TILES
-                        .into_iter()
-                        .skip(1)
-                        .all(|(x, y)| self.get_tile(x, y).is_none())
-                    && WHITE_QUEEN_SIDE_TILES
-                        .into_iter()
-                        .all(|(x, y)| !self.tile_under_attack(x, y, Color::Black))
-                {
-                    moves.push(Move::Castle {
-                        from: (4, 7),
-                        to: (2, 7),
-                        rook_from: (0, 7),
-                        rook_to: (3, 7),
-                    });
-                }
-
-                if self.white_kingside_castle
-                    && WHITE_KING_SIDE_TILES
-                        .into_iter()
-                        .skip(1)
-                        .all(|(x, y)| self.get_tile(x, y).is_none())
-                    && WHITE_KING_SIDE_TILES
-                        .into_iter()
-                        .all(|(x, y)| !self.tile_under_attack(x, y, Color::Black))
-                {
-                    moves.push(Move::Castle {
-                        from: (4, 7),
-                        to: (6, 7),
-                        rook_from: (7, 7),
-                        rook_to: (5, 7),
-                    });
-                }
-            }
-
-            if piece.color == Color::Black {
-                const BLACK_QUEEN_SIDE_TILES: [(usize, usize); 3] = [(4, 0), (3, 0), (2, 0)];
-                const BLACK_KING_SIDE_TILES: [(usize, usize); 3] = [(4, 0), (5, 0), (6, 0)];
-                if self.black_queenside_castle
-                    && BLACK_QUEEN_SIDE_TILES
-                        .into_iter()
-                        .skip(1)
-                        .all(|(x, y)| self.get_tile(x, y).is_none())
-                    && BLACK_QUEEN_SIDE_TILES
-                        .into_iter()
-                        .all(|(x, y)| !self.tile_under_attack(x, y, Color::Black))
-                {
-                    moves.push(Move::Castle {
-                        from: (4, 0),
-                        to: (2, 0),
-                        rook_from: (0, 0),
-                        rook_to: (3, 0),
-                    });
-                }
-
-                if self.black_kingside_castle
-                    && BLACK_KING_SIDE_TILES
-                        .into_iter()
-                        .skip(1)
-                        .all(|(x, y)| self.get_tile(x, y).is_none())
-                    && BLACK_KING_SIDE_TILES
-                        .into_iter()
-                        .all(|(x, y)| !self.tile_under_attack(x, y, Color::Black))
-                {
-                    moves.push(Move::Castle {
-                        from: (4, 0),
-                        to: (6, 0),
-                        rook_from: (7, 0),
-                        rook_to: (5, 0),
-                    });
-                }
-            }
-        }
-
-        Some(moves)
+        gen_pseudo_legal_moves::gen_pseudo_legal_moves(self, x, y, false)
     }
 }
 
