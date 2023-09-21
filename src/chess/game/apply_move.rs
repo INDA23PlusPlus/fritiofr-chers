@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use crate::{error::GameApplyMoveError, Color, Game, Move, Piece, PieceType};
 
 impl Game {
@@ -20,7 +18,7 @@ impl Game {
     /// // Move the pawn on e2 to e3
     /// game.apply_move(Move::Quiet { from: (4, 6), to: (4, 5) });
     /// ```
-    pub fn apply_move(&mut self, mv: Move) -> Result<(), Box<dyn Error>> {
+    pub fn apply_move(&mut self, mv: Move) -> Result<(), GameApplyMoveError> {
         self.en_passant = None;
 
         match mv {
@@ -59,7 +57,7 @@ impl Game {
                     self.board.remove_tile(from.0, from.1);
                     self.board.set_tile(to.0, to.1, piece);
                 } else {
-                    return Err(Box::new(GameApplyMoveError::InvalidMove));
+                    return Err(GameApplyMoveError::InvalidMove);
                 }
             }
             Move::Capture {
@@ -112,7 +110,7 @@ impl Game {
                     self.board.remove_tile(from.0, from.1);
                     self.board.set_tile(to.0, to.1, piece);
                 } else {
-                    return Err(Box::new(GameApplyMoveError::InvalidMove));
+                    return Err(GameApplyMoveError::InvalidMove);
                 }
             }
             Move::Castle {
@@ -140,10 +138,10 @@ impl Game {
                         self.board.set_tile(to.0, to.1, king_piece);
                         self.board.set_tile(rook_to.0, rook_to.1, rook_piece);
                     } else {
-                        return Err(Box::new(GameApplyMoveError::Debug(0)));
+                        return Err(GameApplyMoveError::InvalidMove);
                     }
                 } else {
-                    return Err(Box::new(GameApplyMoveError::Debug(1)));
+                    return Err(GameApplyMoveError::InvalidMove);
                 }
             }
             Move::QuietPromotion {
@@ -163,7 +161,7 @@ impl Game {
                         },
                     );
                 } else {
-                    return Err(Box::new(GameApplyMoveError::InvalidMove));
+                    return Err(GameApplyMoveError::InvalidMove);
                 }
             }
             Move::CapturePromotion {
@@ -201,7 +199,7 @@ impl Game {
                         },
                     );
                 } else {
-                    return Err(Box::new(GameApplyMoveError::InvalidMove));
+                    return Err(GameApplyMoveError::InvalidMove);
                 }
             }
         };
