@@ -72,7 +72,7 @@ impl Game {
     ///
     /// A pseudo legal move is a move that is legal except for the fact that it might leave the king
     /// in check.
-    pub fn gen_pseudo_legal_moves(
+    pub(crate) fn gen_pseudo_legal_moves(
         &self,
         x: usize,
         y: usize,
