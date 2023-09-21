@@ -2,7 +2,7 @@ use std::fmt;
 
 use crate::PieceType;
 
-/// A move that can be made on a board
+/// A move that can be made in a game
 #[derive(Debug, Clone, Copy)]
 pub enum Move {
     /// A move that is not a capture

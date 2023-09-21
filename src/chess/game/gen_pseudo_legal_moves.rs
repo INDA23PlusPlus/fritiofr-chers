@@ -1,16 +1,16 @@
-use crate::{Board, Color, Move, Piece, PieceType};
+use crate::{Color, Game, Move, Piece, PieceType};
 
 /// Generates all pseudo legal moves for a piece
 ///
 /// A pseudo legal move is a move that is legal except for the fact that it might leave the king
 /// in check.
 pub fn gen_pseudo_legal_moves(
-    board: &Board,
+    game: &Game,
     x: usize,
     y: usize,
     skip_castle: bool,
 ) -> Option<Vec<Move>> {
-    let piece = board.get_tile(x, y);
+    let piece = game.get_tile(x, y);
 
     if piece.is_none() {
         return None;
@@ -41,7 +41,7 @@ pub fn gen_pseudo_legal_moves(
                     let c_x = c_x as usize;
                     let c_y = c_y as usize;
 
-                    let oc_piece = board.get_tile(c_x as usize, c_y as usize);
+                    let oc_piece = game.get_tile(c_x as usize, c_y as usize);
 
                     if oc_piece.is_none() {
                         if c_y == final_rank {
@@ -74,8 +74,8 @@ pub fn gen_pseudo_legal_moves(
                     let c_x = c_x as usize;
                     let c_y = c_y as usize;
 
-                    let oc_piece_further = board.get_tile(c_x as usize, c_y);
-                    let oc_piece_close = board.get_tile(c_x as usize, (c_y as i32 - dir) as usize);
+                    let oc_piece_further = game.get_tile(c_x as usize, c_y);
+                    let oc_piece_close = game.get_tile(c_x as usize, (c_y as i32 - dir) as usize);
 
                     if oc_piece_further.is_none() && oc_piece_close.is_none() {
                         moves.push(Move::Quiet {
@@ -96,7 +96,7 @@ pub fn gen_pseudo_legal_moves(
                         let c_x = c_x as usize;
                         let c_y = c_y as usize;
 
-                        let oc_piece = board.get_tile(c_x as usize, c_y as usize);
+                        let oc_piece = game.get_tile(c_x as usize, c_y as usize);
 
                         if oc_piece.is_some() && oc_piece.unwrap().color != piece.color {
                             if c_y == final_rank {
@@ -125,7 +125,7 @@ pub fn gen_pseudo_legal_moves(
 
             // En passant
             {
-                if let Some((ep_x, ep_y)) = board.en_passant {
+                if let Some((ep_x, ep_y)) = game.en_passant {
                     for x_dir in [-1, 1] {
                         let c_x = x as i32 + x_dir;
                         let c_y = y as i32 + dir;
@@ -213,7 +213,7 @@ pub fn gen_pseudo_legal_moves(
                     let c_x = c_x as usize;
                     let c_y = c_y as usize;
 
-                    let oc_piece = board.get_tile(c_x, c_y);
+                    let oc_piece = game.get_tile(c_x, c_y);
 
                     match oc_piece {
                         Some(oc_piece) => {
@@ -251,9 +251,9 @@ pub fn gen_pseudo_legal_moves(
 
         let rank = if piece.color == Color::White { 7 } else { 0 };
         let (kingside_castle, queenside_castle) = if piece.color == Color::White {
-            (board.white_kingside_castle, board.white_queenside_castle)
+            (game.white_kingside_castle, game.white_queenside_castle)
         } else {
-            (board.black_kingside_castle, board.black_queenside_castle)
+            (game.black_kingside_castle, game.black_queenside_castle)
         };
         let mut check_data = vec![];
         if kingside_castle {
@@ -267,10 +267,10 @@ pub fn gen_pseudo_legal_moves(
         {
             if tiles_empty
                 .into_iter()
-                .all(|x| board.get_tile(x, rank).is_none())
+                .all(|x| game.get_tile(x, rank).is_none())
                 && tiles_not_attacked
                     .into_iter()
-                    .all(|x| !tile_under_attack(&board, x, rank, piece.color.opposite()))
+                    .all(|x| !tile_under_attack(&game, x, rank, piece.color.opposite()))
             {
                 moves.push(Move::Castle {
                     from: (4, rank),
@@ -294,18 +294,18 @@ pub fn gen_pseudo_legal_moves(
 ///
 /// # Returns
 /// * `bool` - If theres a piece that can immediately capture the tile
-fn tile_under_attack(board: &Board, x: usize, y: usize, color: Color) -> bool {
-    // The idea here is to create a dummy board and on the tile we want to check add a piece
+fn tile_under_attack(game: &Game, x: usize, y: usize, color: Color) -> bool {
+    // The idea here is to create a dummy game and on the tile we want to check add a piece
     // Then we run move generation and check if any of the moves are a capture of the tile
     // If so then the tile is under attack
-    let mut dummy_board = board.clone();
+    let mut dummy_game = game.clone();
 
-    if let Some(piece) = dummy_board.get_tile(x, y) {
+    if let Some(piece) = dummy_game.get_tile(x, y) {
         if piece.color == color {
             return false;
         }
     } else {
-        dummy_board.set_tile(
+        dummy_game.set_tile(
             x,
             y,
             Piece {
@@ -315,7 +315,7 @@ fn tile_under_attack(board: &Board, x: usize, y: usize, color: Color) -> bool {
         );
     }
 
-    dummy_board
+    dummy_game
         .tiles
         .iter()
         .enumerate()
@@ -327,7 +327,7 @@ fn tile_under_attack(board: &Board, x: usize, y: usize, color: Color) -> bool {
             ((x, y), p.unwrap())
         })
         .filter(|(_, p)| p.color == color)
-        .map(|((x, y), _)| gen_pseudo_legal_moves(&dummy_board, x, y, true))
+        .map(|((x, y), _)| gen_pseudo_legal_moves(&dummy_game, x, y, true))
         .flatten()
         .flatten()
         .any(|m| match m {
