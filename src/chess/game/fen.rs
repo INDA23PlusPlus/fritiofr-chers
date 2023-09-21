@@ -76,6 +76,59 @@ impl Game {
             black_queenside_castle: castling[3],
         })
     }
+
+    /// Returns the game as a FEN string
+    ///
+    /// # Returns
+    /// * `String` - The game as a FEN string
+    pub fn fen(&self) -> String {
+        let board = self.board.fen();
+
+        let turn = match self.turn {
+            Color::White => "w",
+            Color::Black => "b",
+        };
+
+        macro_rules! castling {
+            ($x:expr, $y:expr) => {
+                if ($x) {
+                    $y
+                } else {
+                    ""
+                }
+            };
+        }
+
+        let castling = format!(
+            "{}{}{}{}",
+            castling!(self.white_kingside_castle, "K"),
+            castling!(self.white_queenside_castle, "Q"),
+            castling!(self.black_kingside_castle, "k"),
+            castling!(self.black_queenside_castle, "q")
+        );
+        let castling = if castling.is_empty() {
+            "-".to_string()
+        } else {
+            castling
+        };
+
+        let en_passant = if let Some((ep_x, ep_y)) = self.en_passant {
+            let ep_y = if self.turn == Color::White {
+                ep_y - 1
+            } else {
+                ep_y + 1
+            };
+
+            let rank = '1' as usize + (7 - ep_y);
+            let file = 'a' as usize + ep_x;
+
+            format!("{}{}", char::from(file as u8), char::from(rank as u8))
+        } else {
+            "-".to_string()
+        };
+
+        format!("{} {} {} {}", board, turn, castling, en_passant)
+    }
 }
 
 fn castling_part(fen_part: &str) -> Result<[bool; 4], FromFenError> {
@@ -144,4 +197,24 @@ fn en_passant(fen_part: &str) -> Result<Option<(usize, usize)>, FromFenError> {
     };
 
     Ok(Some((file, rank)))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    pub fn fen_should_be_same_as_from_fen() {
+        let fens_to_test = vec![
+            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -",
+            "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 b - -",
+            "5bnr/pp1p1ppp/nbrp4/1k2pQN1/2B1q3/6N1/PPPRPPPP/R1B1K3 w Q e6",
+            "rnbqkbnr/pppppppp/8/8/2P5/8/PP1PPPPP/RNBQKBNR b KQkq c3",
+        ];
+
+        for fen in fens_to_test {
+            let board = Game::from_fen(fen).unwrap();
+            assert_eq!(board.fen(), fen);
+        }
+    }
 }

@@ -104,6 +104,46 @@ impl Board {
 
         self.tiles[index] = None;
     }
+
+    /// Returns the board as a FEN string
+    ///
+    /// # Returns
+    /// * `String` - The board as a FEN string
+    pub fn fen(&self) -> String {
+        let mut fen = String::new();
+
+        let mut empty_tiles = 0;
+
+        for (i, tile) in self.tiles.into_iter().enumerate() {
+            if i % 8 == 0 && i != 0 {
+                if empty_tiles != 0 {
+                    fen.push_str(&empty_tiles.to_string());
+                    empty_tiles = 0;
+                }
+
+                fen.push('/');
+            }
+
+            if let Some(piece) = tile {
+                if empty_tiles != 0 {
+                    fen.push_str(&empty_tiles.to_string());
+                    empty_tiles = 0;
+                }
+
+                let piece_char: char = piece.into();
+
+                fen.push(piece_char);
+            } else {
+                empty_tiles += 1;
+            }
+        }
+
+        if empty_tiles != 0 {
+            fen.push_str(&empty_tiles.to_string());
+        }
+
+        fen
+    }
 }
 
 impl Eq for Board {}
@@ -135,5 +175,24 @@ impl std::fmt::Display for Board {
         }
 
         write!(f, "{}", game_string)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    pub fn fen_should_be_same_as_from_fen() {
+        let fens_to_test = vec![
+            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR",
+            "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1",
+            "5bnr/pp1ppppp/nbrp4/1k3QN1/2B1q3/6N1/PPPRPPPP/R1B1K3",
+        ];
+
+        for fen in fens_to_test {
+            let board = Board::from_fen(fen).unwrap();
+            assert_eq!(board.fen(), fen);
+        }
     }
 }
