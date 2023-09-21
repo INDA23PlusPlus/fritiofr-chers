@@ -22,8 +22,6 @@ pub enum FromFenError {
 pub enum GameApplyMoveError {
     #[error("The move is not valid for this game")]
     InvalidMove,
-    #[error("The move is not valid for this game")]
-    Debug(u8),
 }
 
 #[derive(thiserror::Error, Debug)]
