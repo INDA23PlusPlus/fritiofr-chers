@@ -1,3 +1,8 @@
+//! # Fritiofs awesome chess library
+//!
+//! This is a cool chess library that I made. The internals are pretty messy 🫣, but hopefully the
+//! exposed api's are nice atleast!
+
 mod chess;
 pub use crate::chess::*;
 
