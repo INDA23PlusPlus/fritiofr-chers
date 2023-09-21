@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::PieceType;
 
 /// A move that can be made on a board

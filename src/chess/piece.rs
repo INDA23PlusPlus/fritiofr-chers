@@ -1,7 +1,3 @@
-// Piece enum
-//
-// Fritiof Rusck 2023-09-18
-
 use std::str::FromStr;
 
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]

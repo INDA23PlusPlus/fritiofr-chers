@@ -1,5 +1,8 @@
 mod piece;
-pub use piece::{Color, ParsePieceError, Piece, PieceType};
+pub use piece::*;
 
 mod board;
-pub use board::{Board, Move};
+pub use board::*;
+
+mod mv;
+pub use mv::*;

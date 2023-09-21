@@ -1,5 +1,9 @@
 use crate::{Board, Color, Move, Piece, PieceType};
 
+/// Generates all pseudo legal moves for a piece
+///
+/// A pseudo legal move is a move that is legal except for the fact that it might leave the king
+/// in check.
 pub fn gen_pseudo_legal_moves(
     board: &Board,
     x: usize,
@@ -238,10 +242,12 @@ pub fn gen_pseudo_legal_moves(
     };
 
     if piece.piece_type == PieceType::King && !skip_castle {
-        // (Positions that the king need to move between, king end position, rook start
+        // (non attacked positions, empty positions, king end position, rook start
         // position, rook end position)
-        const QUEEN_SIDE_TILES: ([usize; 3], usize, usize, usize) = ([4, 3, 2], 2, 0, 3);
-        const KING_SIDE_TILES: ([usize; 3], usize, usize, usize) = ([4, 5, 6], 6, 7, 5);
+        let queen_side_tiles: (Vec<usize>, Vec<usize>, usize, usize, usize) =
+            (vec![4, 3, 2], vec![1, 2, 3], 2, 0, 3);
+        let king_side_tiles: (Vec<usize>, Vec<usize>, usize, usize, usize) =
+            (vec![4, 5, 6], vec![5, 6], 6, 7, 5);
 
         let rank = if piece.color == Color::White { 7 } else { 0 };
         let (kingside_castle, queenside_castle) = if piece.color == Color::White {
@@ -251,18 +257,18 @@ pub fn gen_pseudo_legal_moves(
         };
         let mut check_data = vec![];
         if kingside_castle {
-            check_data.push(KING_SIDE_TILES);
+            check_data.push(king_side_tiles);
         }
         if queenside_castle {
-            check_data.push(QUEEN_SIDE_TILES);
+            check_data.push(queen_side_tiles);
         }
 
-        for (tiles, king_start_x, rook_start_x, rook_end_x) in check_data {
-            if tiles
+        for (tiles_not_attacked, tiles_empty, king_start_x, rook_start_x, rook_end_x) in check_data
+        {
+            if tiles_empty
                 .into_iter()
-                .skip(1)
                 .all(|x| board.get_tile(x, rank).is_none())
-                && tiles
+                && tiles_not_attacked
                     .into_iter()
                     .all(|x| !tile_under_attack(&board, x, rank, piece.color.opposite()))
             {

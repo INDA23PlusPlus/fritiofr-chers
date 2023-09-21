@@ -48,7 +48,7 @@ pub fn fen_parser(fen: &str) -> Result<Board, Box<dyn Error>> {
 
     let en_passant = en_passant(fen_part_en_passant)?;
 
-    if let Some((ep_x, ep_y)) = en_passant {
+    let en_passant = if let Some((ep_x, ep_y)) = en_passant {
         // Because i store en passant as the tile of the pawn that can be captured,
         let ep_y = if turn == Color::White {
             ep_y + 1
@@ -65,7 +65,11 @@ pub fn fen_parser(fen: &str) -> Result<Board, Box<dyn Error>> {
         } else {
             return Err(Box::new(BoardFromFenError::InvalidEnPassant));
         }
-    }
+
+        Some((ep_x, ep_y))
+    } else {
+        None
+    };
 
     Ok(Board {
         tiles,

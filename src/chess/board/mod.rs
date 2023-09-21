@@ -8,8 +8,7 @@ pub use fen_parser::BoardFromFenError;
 
 mod gen_pseudo_legal_moves;
 
-mod mv;
-pub use mv::Move;
+use super::Move;
 
 #[derive(Copy, Clone)]
 pub struct Board {
@@ -149,20 +148,17 @@ impl Board {
                         }
                     }
 
-                    if piece.piece_type == PieceType::Rook {
-                        if piece.color == Color::White {
-                            if from == (0, 7) {
-                                self.white_queenside_castle = false;
-                            } else if from == (7, 7) {
-                                self.white_kingside_castle = false;
-                            }
-                        } else {
-                            if from == (0, 0) {
-                                self.black_queenside_castle = false;
-                            } else if from == (7, 0) {
-                                self.black_kingside_castle = false;
-                            }
-                        }
+                    // Remove castling rights if a rook is moved
+                    // If there is another from 0, 7 the rook has already moved and we can set it
+                    // to false either way. No need to check that the move was actually a rook
+                    if from == (0, 7) {
+                        self.white_queenside_castle = false;
+                    } else if from == (7, 7) {
+                        self.white_kingside_castle = false;
+                    } else if from == (0, 0) {
+                        self.black_queenside_castle = false;
+                    } else if from == (7, 0) {
+                        self.black_kingside_castle = false;
                     }
 
                     self.remove_tile(from.0, from.1);
