@@ -1,15 +1,15 @@
-use std::error::Error;
+use crate::{Board, Color, PieceType};
 
-use crate::{Board, Color, Piece, PieceType};
-
+mod apply_move;
 mod from_fen;
 mod gen_pseudo_legal_moves;
 use super::Move;
 
-#[derive(Copy, Clone)]
+/// A game of chess
+#[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub struct Game {
     board: Board,
-    pub turn: Color,
+    turn: Color,
     /// Stores a pawn that can be captured en passant
     en_passant: Option<(usize, usize)>,
 
@@ -26,215 +26,54 @@ impl Game {
             .expect("This fen string is valid")
     }
 
-    /// Applies a move to the game
+    /// Returns the Board that for the game
+    ///
+    /// # Return
+    /// * `Board` - The board for the game
+    pub fn get_board(&self) -> Board {
+        self.board
+    }
+
+    /// Sets the Board for the game
+    ///
+    /// **This will reset en passant and castling**
     ///
     /// # Arguments
-    /// * `mv` - The move to apply
-    ///
-    /// # Returns
-    /// * `Result<(), Box<dyn Error>>` - A result that holds nothing if the move was applied
-    /// successfully or an error if the move was invalid
-    ///
-    /// # Examples
-    /// ```
-    /// let mut game = game::start_pos();
-    /// // Move the pawn on e2 to e3
-    /// game.apply_move(Move::Quiet { from: (4, 6), to: (4, 5) });
-    /// ```
-    pub fn apply_move(&mut self, mv: Move) -> Result<(), Box<dyn Error>> {
+    /// * `board` - The board to set
+    pub fn set_board(&mut self, board: Board) {
+        self.white_kingside_castle = false;
+        self.white_queenside_castle = false;
+        self.black_kingside_castle = false;
+        self.black_queenside_castle = false;
+
         self.en_passant = None;
 
-        match mv {
-            Move::Quiet { from, to, .. } => {
-                if let Some(piece) = self.get_tile(from.0, from.1) {
-                    // Check en peasant possibility
-                    if piece.piece_type == PieceType::Pawn
-                        && (from.1 as i32 - to.1 as i32).abs() == 2
-                    {
-                        self.en_passant = Some((to.0, to.1));
-                    }
+        self.board = board;
+    }
 
-                    if piece.piece_type == PieceType::King {
-                        if piece.color == Color::White {
-                            self.white_kingside_castle = false;
-                            self.white_queenside_castle = false;
-                        } else {
-                            self.black_kingside_castle = false;
-                            self.black_queenside_castle = false;
-                        }
-                    }
+    /// Returns the current turn
+    ///
+    /// # Return
+    /// * `Color` - The current turn
+    pub fn get_turn(&mut self) -> Color {
+        self.turn
+    }
 
-                    // Remove castling rights if a rook is moved
-                    // If there is another from 0, 7 the rook has already moved and we can set it
-                    // to false either way. No need to check that the move was actually a rook
-                    if from == (0, 7) {
-                        self.white_queenside_castle = false;
-                    } else if from == (7, 7) {
-                        self.white_kingside_castle = false;
-                    } else if from == (0, 0) {
-                        self.black_queenside_castle = false;
-                    } else if from == (7, 0) {
-                        self.black_kingside_castle = false;
-                    }
-
-                    self.remove_tile(from.0, from.1);
-                    self.set_tile(to.0, to.1, piece);
-                } else {
-                    return Err(Box::new(gameApplyMoveError::InvalidMove));
-                }
-            }
-            Move::Capture {
-                from, to, capture, ..
-            } => {
-                if let Some(piece) = self.get_tile(from.0, from.1) {
-                    if piece.piece_type == PieceType::King {
-                        if piece.color == Color::White {
-                            self.white_kingside_castle = false;
-                            self.white_queenside_castle = false;
-                        } else {
-                            self.black_kingside_castle = false;
-                            self.black_queenside_castle = false;
-                        }
-                    }
-
-                    if piece.piece_type == PieceType::Rook {
-                        if piece.color == Color::White {
-                            if from == (0, 7) {
-                                self.white_queenside_castle = false;
-                            } else if from == (7, 7) {
-                                self.white_kingside_castle = false;
-                            }
-                        } else {
-                            if from == (0, 0) {
-                                self.black_queenside_castle = false;
-                            } else if from == (7, 0) {
-                                self.black_kingside_castle = false;
-                            }
-                        }
-                    }
-
-                    if let Some(capture_piece) = self.get_tile(capture.0, capture.1) {
-                        if capture_piece.color == Color::White {
-                            if capture == (0, 7) {
-                                self.white_queenside_castle = false;
-                            } else if capture == (7, 7) {
-                                self.white_kingside_castle = false;
-                            }
-                        } else {
-                            if capture == (0, 0) {
-                                self.black_queenside_castle = false;
-                            } else if capture == (7, 0) {
-                                self.black_kingside_castle = false;
-                            }
-                        }
-                    }
-
-                    self.remove_tile(capture.0, capture.1);
-                    self.remove_tile(from.0, from.1);
-                    self.set_tile(to.0, to.1, piece);
-                } else {
-                    return Err(Box::new(gameApplyMoveError::InvalidMove));
-                }
-            }
-            Move::Castle {
-                from,
-                to,
-                rook_from,
-                rook_to,
-                ..
-            } => {
-                if let Some(king_piece) = self.get_tile(from.0, from.1) {
-                    if let Some(rook_piece) = self.get_tile(rook_from.0, rook_from.1) {
-                        let color = king_piece.color;
-
-                        if color == Color::White {
-                            self.white_kingside_castle = false;
-                            self.white_queenside_castle = false;
-                        } else {
-                            self.black_kingside_castle = false;
-                            self.black_queenside_castle = false;
-                        }
-
-                        self.remove_tile(from.0, from.1);
-                        self.remove_tile(rook_from.0, rook_from.1);
-
-                        self.set_tile(to.0, to.1, king_piece);
-                        self.set_tile(rook_to.0, rook_to.1, rook_piece);
-                    } else {
-                        return Err(Box::new(gameApplyMoveError::Debug(0)));
-                    }
-                } else {
-                    return Err(Box::new(gameApplyMoveError::Debug(1)));
-                }
-            }
-            Move::QuietPromotion {
-                from,
-                to,
-                promotion,
-                ..
-            } => {
-                if let Some(piece) = self.get_tile(from.0, from.1) {
-                    self.remove_tile(from.0, from.1);
-                    self.set_tile(
-                        to.0,
-                        to.1,
-                        Piece {
-                            piece_type: promotion,
-                            color: piece.color,
-                        },
-                    );
-                } else {
-                    return Err(Box::new(gameApplyMoveError::InvalidMove));
-                }
-            }
-            Move::CapturePromotion {
-                from,
-                to,
-                capture,
-                promotion,
-                ..
-            } => {
-                if let Some(piece) = self.get_tile(from.0, from.1) {
-                    if let Some(capture_piece) = self.get_tile(capture.0, capture.1) {
-                        if capture_piece.color == Color::White {
-                            if capture == (0, 7) {
-                                self.white_queenside_castle = false;
-                            } else if capture == (7, 7) {
-                                self.white_kingside_castle = false;
-                            }
-                        } else {
-                            if capture == (0, 0) {
-                                self.black_queenside_castle = false;
-                            } else if capture == (7, 0) {
-                                self.black_kingside_castle = false;
-                            }
-                        }
-                    }
-
-                    self.remove_tile(from.0, from.1);
-                    self.remove_tile(capture.0, capture.1);
-                    self.set_tile(
-                        to.0,
-                        to.1,
-                        Piece {
-                            piece_type: promotion,
-                            color: piece.color,
-                        },
-                    );
-                } else {
-                    return Err(Box::new(gameApplyMoveError::InvalidMove));
-                }
-            }
-        };
-
-        self.turn = self.turn.opposite();
-
-        Ok(())
+    /// Sets the current turn
+    ///
+    /// **This will reset en passant**
+    ///
+    /// # Arguments
+    /// * `Color` - The current turn
+    pub fn set_turn(&mut self, turn: Color) {
+        self.en_passant = None;
+        self.turn = turn;
     }
 
     /// Returns if a certain color can capture the other color's king
     fn can_capture_king(&self, color: Color) -> bool {
-        self.tiles
+        self.board
+            .tiles
             .iter()
             .enumerate()
             .filter(|(_, p)| p.is_some())
@@ -245,11 +84,18 @@ impl Game {
                 ((x, y), p.unwrap())
             })
             .filter(|(_, p)| p.color == color)
-            .map(|((x, y), _)| self.gen_pseudo_legal_moves(x, y).unwrap_or(Vec::new()))
+            .map(|((x, y), _)| {
+                self.gen_pseudo_legal_moves(x, y, false)
+                    .unwrap_or(Vec::new())
+            })
             .flatten()
             .any(|m| match m {
                 Move::Capture { capture, .. } | Move::CapturePromotion { capture, .. } => {
-                    self.get_tile(capture.0, capture.1).unwrap().piece_type == PieceType::King
+                    self.board
+                        .get_tile(capture.0, capture.1)
+                        .unwrap()
+                        .piece_type
+                        == PieceType::King
                 }
                 _ => false,
             })
@@ -317,7 +163,7 @@ impl Game {
     /// will return None. If the piece of x and y is the opposite color of the current turn, this
     /// will return None
     pub fn gen_moves(&self, x: usize, y: usize) -> Option<Vec<Move>> {
-        if let Some(piece) = self.get_tile(x, y) {
+        if let Some(piece) = self.board.get_tile(x, y) {
             if piece.color != self.turn {
                 return None;
             }
@@ -325,7 +171,7 @@ impl Game {
             return None;
         }
 
-        let moves = self.gen_pseudo_legal_moves(x, y);
+        let moves = self.gen_pseudo_legal_moves(x, y, false);
 
         if moves.is_none() {
             return None;
@@ -350,16 +196,4 @@ impl Game {
 
         Some(moves)
     }
-
-    fn gen_pseudo_legal_moves(&self, x: usize, y: usize) -> Option<Vec<Move>> {
-        gen_pseudo_legal_moves::gen_pseudo_legal_moves(self, x, y, false)
-    }
-}
-
-#[derive(thiserror::Error, Debug)]
-pub enum gameApplyMoveError {
-    #[error("The move is not valid for this game")]
-    InvalidMove,
-    #[error("The move is not valid for this game")]
-    Debug(u8),
 }

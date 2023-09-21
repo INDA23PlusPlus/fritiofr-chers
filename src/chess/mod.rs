@@ -7,7 +7,7 @@ pub use game::*;
 mod board;
 pub use board::*;
 
-pub mod errors;
+pub mod error;
 
 mod mv;
 pub use mv::*;

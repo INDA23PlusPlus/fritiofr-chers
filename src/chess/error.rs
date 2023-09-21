@@ -17,3 +17,21 @@ pub enum FromFenError {
     #[error("Invalid en passant")]
     InvalidEnPassant,
 }
+
+#[derive(thiserror::Error, Debug)]
+pub enum GameApplyMoveError {
+    #[error("The move is not valid for this game")]
+    InvalidMove,
+    #[error("The move is not valid for this game")]
+    Debug(u8),
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum ParsePieceError {
+    #[error("Provided string is too long")]
+    StringTooLong,
+    #[error("Provided string is empty")]
+    StringEmpty,
+    #[error("Unknown character piece")]
+    UnknownCharacterPiece,
+}

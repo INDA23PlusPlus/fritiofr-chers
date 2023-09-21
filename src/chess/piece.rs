@@ -1,11 +1,15 @@
 use std::str::FromStr;
 
+use crate::error::ParsePieceError;
+
+/// A piece on the board
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub struct Piece {
     pub piece_type: PieceType,
     pub color: Color,
 }
 
+/// A type of piece
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum PieceType {
     Pawn,
@@ -16,6 +20,7 @@ pub enum PieceType {
     King,
 }
 
+/// Either white or black
 #[derive(Copy, Debug, Clone, PartialEq, Eq)]
 pub enum Color {
     White,
@@ -23,6 +28,10 @@ pub enum Color {
 }
 
 impl Color {
+    /// Returns the opposite color
+    ///
+    /// # Return
+    /// * `Color` - The opposite color
     pub fn opposite(&self) -> Color {
         match self {
             Color::White => Color::Black,
@@ -90,14 +99,4 @@ impl FromStr for Piece {
 
         piece
     }
-}
-
-#[derive(thiserror::Error, Debug)]
-pub enum ParsePieceError {
-    #[error("Provided string is too long")]
-    StringTooLong,
-    #[error("Provided string is empty")]
-    StringEmpty,
-    #[error("Unknown character piece")]
-    UnknownCharacterPiece,
 }

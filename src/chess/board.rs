@@ -1,8 +1,9 @@
-use crate::{errors::FromFenError, Piece};
+use crate::{error::FromFenError, Piece};
 
+/// A chess board
 #[derive(Debug, Copy, Clone)]
 pub struct Board {
-    tiles: [Option<Piece>; 64],
+    pub(crate) tiles: [Option<Piece>; 64],
 }
 
 impl Board {
