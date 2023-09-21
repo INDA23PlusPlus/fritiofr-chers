@@ -1,7 +1,7 @@
 use crate::{Board, Color, PieceType};
 
 mod apply_move;
-mod from_fen;
+mod fen;
 mod gen_pseudo_legal_moves;
 use super::Move;
 

@@ -1,10 +1,10 @@
 [package]
-name = "fritiof chess"
+name = "fr_chess"
 version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "fritiof_chess"
+name = "fr_chess"
 path = "src/lib.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

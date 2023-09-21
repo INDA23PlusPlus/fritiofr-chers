@@ -3,17 +3,19 @@ use std::collections::HashSet;
 use crate::{error::FromFenError, Board, Color, Game, PieceType};
 
 impl Game {
-    /// Creates a new game from a fen string
+    /// Creates a new game from a FEN string
     ///
     /// # Arguments
-    /// * `fen` - A string that holds the fen string
+    /// * `fen` - A string that holds the FEN string
     ///
     /// # Returns
     /// * `Result<game, FromFenError>` - A result that holds the game if the fen string is valid
-    /// or an error if the fen string is invalid
+    /// or an error if the FEN string is invalid
     ///
     /// # Examples
     /// ```
+    /// use fr_chess::Game;
+    ///
     /// // Starting position
     /// let game = Game::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
     /// ```

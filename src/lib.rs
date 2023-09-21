@@ -1,7 +1,37 @@
-//! # Fritiofs awesome chess library
+//! # Fritiofs awesome chess library 🤩
 //!
 //! This is a cool chess library that I made. The internals are pretty messy 🫣, but hopefully the
 //! exposed api's are nice atleast!
+//!
+//! ## How to use the library 📚
+//! Since chess doesn't make sense without knowing what has happened before in the game, this
+//! library is currated around a `Game` struct. This struct contains all the information about the
+//! game state and how the game can continue to progess.
+//!
+//! This means that it's very difficult to make an arbitrary move on the board. You can't juse move
+//! pieces around yourself, you have to use the `apply_move` function to apply a move to the game
+//! with a valid move enum.
+//!
+//! The idea on how to play a game of chess with this library:
+//! - Start by checking `is_checkmate` and `is_stalemate` to see if the game has ended
+//! - Call either `gen_moves` or `gen_all_moves` to get a vector containing all the moves for the
+//! current turn
+//! - Pick a move from the vector and apply it to the game with `apply_move`
+//! - Repeat 🔁
+//!
+//! ## Things that are not implemented by design 🚫
+//!
+//! - There is no real way to switch turns in the game.
+//! - There is no way to move pieces arbitrarily around in a game.
+//!
+//! ## If you have any questions or suggestions 🤔
+//!
+//! Contact me on discord or mail!
+//! - Discord: `Fritiof#3698`
+//! - Mail: `fritiof@rusck.se`
+//!
+//! *Psst i check my mail more often than my discord, so if you want to reach me quickly send a
+//! mail*
 
 mod chess;
 pub use crate::chess::*;

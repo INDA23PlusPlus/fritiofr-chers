@@ -14,6 +14,8 @@ impl Board {
     ///
     /// # Examples
     /// ```
+    /// use fr_chess::Board;
+    ///
     /// // The starting position
     /// Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
     /// ```

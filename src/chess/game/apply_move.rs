@@ -14,7 +14,9 @@ impl Game {
     ///
     /// # Examples
     /// ```
-    /// let mut game = game::start_pos();
+    /// use fr_chess::{Game, Move};
+    ///
+    /// let mut game = Game::start_pos();
     /// // Move the pawn on e2 to e3
     /// game.apply_move(Move::Quiet { from: (4, 6), to: (4, 5) });
     /// ```
