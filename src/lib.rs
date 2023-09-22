@@ -1,11 +1,11 @@
-//! # Fritiofs awesome chess library 🤩
+//! # Fritiof's awesome chess library 🤩
 //!
 //! This is a cool chess library that I made. The internals are pretty messy 🫣, but hopefully the
-//! exposed api's are nice atleast!
+//! exposed api's are nice at least!
 //!
 //! ## How to use the library 📚
 //! Since chess doesn't make sense without knowing what has happened before in the game, this
-//! library is currated around a `Game` struct. This struct contains all the information about the
+//! library is curated around a `Game` struct. This struct contains all the information about the
 //! game state and how the game can continue to progess.
 //!
 //! This means that it's very difficult to make an arbitrary move on the board. You can't juse move
