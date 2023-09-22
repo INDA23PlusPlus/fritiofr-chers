@@ -25,7 +25,7 @@ impl Game {
             let (c_x, c_y) = mv.capture().expect("This is a capture move");
 
             self.board.remove_tile(c_x, c_y);
-            remove_castling_rights(self, (c_x, c_y));
+            remove_castling_rights_pos(self, (c_x, c_y));
         }
 
         let (to_x, to_y) = mv.to();
@@ -41,17 +41,11 @@ impl Game {
 
         // Remove castling rights if the type is king
         if piece.piece_type == PieceType::King {
-            if piece.color == Color::White {
-                self.white_kingside_castle = false;
-                self.white_queenside_castle = false;
-            } else {
-                self.black_kingside_castle = false;
-                self.black_queenside_castle = false;
-            }
+            remove_castling_rights_color(self, piece.color);
         }
 
         // Remove castling right if we move from a corner
-        remove_castling_rights(self, (from_x, from_y));
+        remove_castling_rights_pos(self, (from_x, from_y));
 
         // Set en passant
         if mv.is_double_pawn_push() {
@@ -63,15 +57,7 @@ impl Game {
                 rook_from, rook_to, ..
             } => {
                 if let Some(rook_piece) = self.board.get_tile(rook_from.0, rook_from.1) {
-                    let color = rook_piece.color;
-
-                    if color == Color::White {
-                        self.white_kingside_castle = false;
-                        self.white_queenside_castle = false;
-                    } else {
-                        self.black_kingside_castle = false;
-                        self.black_queenside_castle = false;
-                    }
+                    remove_castling_rights_color(self, rook_piece.color);
 
                     self.board.remove_tile(rook_from.0, rook_from.1);
                     self.board.set_tile(rook_to.0, rook_to.1, rook_piece);
@@ -105,7 +91,7 @@ impl Game {
 
 /// Internal helper that takes a position in one of the corners and removes the castling rights
 /// from that corner
-fn remove_castling_rights(game: &mut Game, pos: (usize, usize)) {
+fn remove_castling_rights_pos(game: &mut Game, pos: (usize, usize)) {
     if pos == (0, 7) {
         game.white_queenside_castle = false;
     } else if pos == (7, 7) {
@@ -114,5 +100,16 @@ fn remove_castling_rights(game: &mut Game, pos: (usize, usize)) {
         game.black_queenside_castle = false;
     } else if pos == (7, 0) {
         game.black_kingside_castle = false;
+    }
+}
+
+/// Internal helper that takes a color and removes the castling rights from that color
+fn remove_castling_rights_color(game: &mut Game, color: Color) {
+    if color == Color::White {
+        game.white_kingside_castle = false;
+        game.white_queenside_castle = false;
+    } else {
+        game.black_kingside_castle = false;
+        game.black_queenside_castle = false;
     }
 }
