@@ -1,5 +1,3 @@
-use std::fmt;
-
 use crate::PieceType;
 
 /// A move that can be made in a game

@@ -12,7 +12,7 @@ impl Game {
     ///
     /// # Examples
     /// ```
-    /// use fr_chess::{Game, Move};
+    /// use fritiofr_chess::{Game, Move};
     ///
     /// let mut game = Game::start_pos();
     /// // Move the pawn on e2 to e3

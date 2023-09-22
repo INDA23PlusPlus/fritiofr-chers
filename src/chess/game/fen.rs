@@ -14,7 +14,7 @@ impl Game {
     ///
     /// # Examples
     /// ```
-    /// use fr_chess::Game;
+    /// use fritiofr_chess::Game;
     ///
     /// // Starting position
     /// let game = Game::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
