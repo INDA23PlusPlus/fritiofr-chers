@@ -57,13 +57,6 @@ impl Board {
     }
 
     /// Returns a piece on the board
-    ///
-    /// # Arguments
-    /// * `x` - The x coordinate of the tile
-    /// * `y` - The y coordinate of the tile
-    ///
-    /// # Returns
-    /// * `Option<Piece>` - The piece on the tile or None if there is no piece
     pub fn get_tile(&self, x: usize, y: usize) -> Option<Piece> {
         if x > 7 || y > 7 {
             panic!("x and y must be between 0 and 7");
@@ -75,11 +68,6 @@ impl Board {
     }
 
     /// Sets a tile on the board
-    ///
-    /// # Arguments
-    /// * `x` - The x coordinate of the tile
-    /// * `y` - The y coordinate of the tile
-    /// * `piece` - The piece to set the tile to
     pub fn set_tile(&mut self, x: usize, y: usize, piece: Piece) {
         if x > 7 || y > 7 {
             panic!("x and y must be between 0 and 7");
@@ -91,10 +79,6 @@ impl Board {
     }
 
     /// Removes a tile from the board
-    ///
-    /// # Arguments
-    /// * `x` - The x coordinate of the tile
-    /// * `y` - The y coordinate of the tile
     pub fn remove_tile(&mut self, x: usize, y: usize) {
         if x > 7 || y > 7 {
             panic!("x and y must be between 0 and 7");
@@ -106,9 +90,6 @@ impl Board {
     }
 
     /// Returns the board as a FEN string
-    ///
-    /// # Returns
-    /// * `String` - The board as a FEN string
     pub fn fen(&self) -> String {
         let mut fen = String::new();
 
