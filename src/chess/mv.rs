@@ -48,7 +48,6 @@ pub enum Move {
 }
 
 impl Move {
-    /// Returns true if the move is a double pawn push move
     pub fn is_double_pawn_push(&self) -> bool {
         match self {
             Move::DoublePawnPush { .. } => true,
@@ -56,7 +55,6 @@ impl Move {
         }
     }
 
-    /// Returns true if the move is a capture
     pub fn is_capture(&self) -> bool {
         match self {
             Move::Capture { .. } | Move::CapturePromotion { .. } => true,
@@ -64,7 +62,6 @@ impl Move {
         }
     }
 
-    /// Returns true if the move is a castle move
     pub fn is_castle(&self) -> bool {
         match self {
             Move::Castle { .. } => true,
@@ -72,7 +69,6 @@ impl Move {
         }
     }
 
-    /// Returns true if the move is a promotion move
     pub fn is_promotion(&self) -> bool {
         match self {
             Move::QuietPromotion { .. } | Move::CapturePromotion { .. } => true,
@@ -104,7 +100,6 @@ impl Move {
         }
     }
 
-    /// Returns the capture square if the move is a capture
     pub fn capture(&self) -> Option<(usize, usize)> {
         match self {
             Move::Capture { capture, .. } | Move::CapturePromotion { capture, .. } => {
@@ -114,7 +109,6 @@ impl Move {
         }
     }
 
-    /// Returns the type of piece the pawn is promoted to if the move is a promotion
     pub fn promotion(&self) -> Option<PieceType> {
         match self {
             Move::QuietPromotion { promotion, .. } | Move::CapturePromotion { promotion, .. } => {
