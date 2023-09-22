@@ -1,14 +1,12 @@
-//! The move enum is divided into 6 different types of move
-//!
-//! There are a number of helper functions to check what type of move it is and get the relevant
-//! information quickly.
-//!
-//! A good way to render a move is to check `from()` and `to()` first, if you need to render the
-//! capture square you can use `capture()`.
-
 use crate::PieceType;
 
-/// A move that can be made in a game
+/// A move that can be applied to a game
+///
+/// There are a number of helper functions to check what type of move it is and get the relevant
+/// information quickly.
+///
+/// A good way to render a move is to check `from()` and `to()` first, if you need to render the
+/// capture square you can use `capture()`.
 #[derive(Debug, Clone, Copy)]
 pub enum Move {
     /// A move that is not a capture
@@ -82,7 +80,7 @@ impl Move {
         }
     }
 
-    /// Returns the move from square, if the move is a castle, it returns the king square
+    /// Returns the move from square. If the move is a castle, it returns the king square
     pub fn from(&self) -> (usize, usize) {
         match self {
             Move::Quiet { from, .. }
@@ -94,7 +92,7 @@ impl Move {
         }
     }
 
-    /// Returns the move to square, if the move is a castle, it returns the king square
+    /// Returns the move to square. If the move is a castle, it returns the king square
     pub fn to(&self) -> (usize, usize) {
         match self {
             Move::Quiet { to, .. }
