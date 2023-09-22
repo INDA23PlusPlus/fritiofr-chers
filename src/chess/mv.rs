@@ -69,6 +69,20 @@ impl Move {
         }
     }
 
+    pub fn is_queen_side_castle(&self) -> bool {
+        match self {
+            Move::Castle { rook_from, .. } => rook_from.0 == 0,
+            _ => false,
+        }
+    }
+
+    pub fn is_king_side_castle(&self) -> bool {
+        match self {
+            Move::Castle { rook_from, .. } => rook_from.0 == 7,
+            _ => false,
+        }
+    }
+
     pub fn is_promotion(&self) -> bool {
         match self {
             Move::QuietPromotion { .. } | Move::CapturePromotion { .. } => true,
