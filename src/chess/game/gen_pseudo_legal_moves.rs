@@ -147,7 +147,7 @@ impl Game {
                         .get_tile(c_x as usize, (c_y as i32 - dir) as usize);
 
                     if oc_piece_further.is_none() && oc_piece_close.is_none() {
-                        moves.push(Move::Quiet {
+                        moves.push(Move::DoublePawnPush {
                             from: (x, y),
                             to: (c_x, c_y),
                         });
