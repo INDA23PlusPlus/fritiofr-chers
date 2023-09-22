@@ -1,4 +1,4 @@
-## Fritiofs awesome chess engine 🤩
+## Fritiof's awesome chess engine 🤩
 
 Read the documentation on: [fritiof.dev](http://fritiof.dev/doc/fritiofr_chess/index.html)
 
