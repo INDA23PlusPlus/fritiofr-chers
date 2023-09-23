@@ -1,4 +1,4 @@
-use crate::{error::FromFenError, Piece};
+use crate::{error::FromFenError, Color, Piece, PieceType};
 
 /// A chess board
 #[derive(Debug, Copy, Clone)]
@@ -54,6 +54,19 @@ impl Board {
         }
 
         Ok(Board { tiles })
+    }
+
+    /// Returns the position of the king of a color
+    pub fn get_king_pos(&self, color: Color) -> Option<(usize, usize)> {
+        (0..8)
+            .map(|x| (0..8).map(move |y| (x, y)))
+            .flatten()
+            .find(|(x, y)| {
+                if let Some(piece) = self.get_tile(*x, *y) {
+                    return piece.color == color && piece.piece_type == PieceType::King;
+                }
+                false
+            })
     }
 
     /// Returns a piece on the board
