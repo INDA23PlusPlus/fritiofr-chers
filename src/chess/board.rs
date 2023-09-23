@@ -182,11 +182,23 @@ mod tests {
             "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR",
             "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1",
             "5bnr/pp1ppppp/nbrp4/1k3QN1/2B1q3/6N1/PPPRPPPP/R1B1K3",
+            "rnb2bnr/pppppp1p/4q3/2k5/1N1B1PK1/2P5/PP3Q2/R4B1R",
         ];
 
         for fen in fens_to_test {
             let board = Board::from_fen(fen).unwrap();
             assert_eq!(board.fen(), fen);
         }
+    }
+
+    #[test]
+    pub fn should_find_the_king() {
+        let board = Board::from_fen("rnb2bnr/pppppp1p/4q3/2k5/1N1B1PK1/2P5/PP3Q2/R4B1R").unwrap();
+        assert_eq!(Some((2, 3)), board.get_king_pos(Color::Black));
+        assert_eq!(Some((6, 4)), board.get_king_pos(Color::White));
+
+        let board = Board::from_fen("rnb2bnr/pppppp1p/4q3/4k3/1N1B1P2/2P5/PPK2Q2/R4B1R").unwrap();
+        assert_eq!(Some((4, 3)), board.get_king_pos(Color::Black));
+        assert_eq!(Some((2, 6)), board.get_king_pos(Color::White));
     }
 }
