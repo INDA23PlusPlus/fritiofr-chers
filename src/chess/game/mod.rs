@@ -152,6 +152,23 @@ impl Game {
         Some(moves)
     }
 
+    /// Returns all moves that can be made from a square to a square
+    ///
+    /// # Arguments
+    /// * `from` - The coordinates of the from tile
+    /// * `to` - The coordinates of the to tile
+    ///
+    /// # Returns
+    /// * `Option<Vec<Move>>` - A vector of all the possible moves, if there are no moves, this
+    /// will return None.
+    pub fn get_move(&self, from: (usize, usize), to: (usize, usize)) -> Option<Vec<Move>> {
+        self.gen_moves(from.0, from.1).map(|mvs| {
+            mvs.into_iter()
+                .filter(|mv| mv.to() == to)
+                .collect::<Vec<Move>>()
+        })
+    }
+
     /// Returns all moves for a certain tile and the current turn
     ///
     /// # Arguments
